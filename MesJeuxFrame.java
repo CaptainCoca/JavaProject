@@ -1,6 +1,9 @@
 package JavaProject;
+
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableColumn;
+
 import java.awt.*;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -21,10 +24,17 @@ public class MesJeuxFrame extends JFrame {
         setTitle("Mes jeux");
         setSize(600, 400);
         setLocationRelativeTo(null);
+        setResizable(false);
 
         model.setColumnIdentifiers(new String[]{"ID", "Jeu", "Action", "Date"});
 
+        // Masquer la colonne ID
         chargerMesTransactions();
+
+        TableColumn colId = tableTransactions.getColumnModel().getColumn(0);
+        colId.setMinWidth(0);
+        colId.setMaxWidth(0);
+        colId.setWidth(0);
 
         JButton btnRendre    = new JButton("Rendre / Vendre");
         JButton btnRecharger = new JButton("Recharger");
@@ -95,8 +105,14 @@ public class MesJeuxFrame extends JFrame {
             stmt2.setString(1, nomJeu);
             stmt2.executeUpdate();
 
+            String requete3 = "UPDATE jeux_video SET etat = 'disponible' WHERE nom = ? AND exemplaires > 0";
+            PreparedStatement stmt3 = connexion.prepareStatement(requete3);
+            stmt3.setString(1, nomJeu);
+            stmt3.executeUpdate();
+
             stmt1.close();
             stmt2.close();
+            stmt3.close();
             connexion.close();
 
             chargerMesTransactions();

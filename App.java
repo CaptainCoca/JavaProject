@@ -1,4 +1,5 @@
 package JavaProject;
+
 import javax.swing.SwingUtilities;
 
 public class App {

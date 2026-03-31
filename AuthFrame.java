@@ -18,6 +18,7 @@ public class AuthFrame extends JFrame {
         setSize(280, 200);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
+        setResizable(false);
         setLayout(new FlowLayout());
 
         add(new JLabel("Email :"));
@@ -52,6 +53,7 @@ public class AuthFrame extends JFrame {
 
             if (res.next()) {
                 Session.emailConnecte = email;
+                Session.roleConnecte  = res.getString("role");
                 new MenuFrame().setVisible(true);
                 this.dispose();
             } else {
