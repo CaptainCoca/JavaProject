@@ -1,4 +1,5 @@
 package JavaProject;
+
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
@@ -8,6 +9,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import at.favre.lib.crypto.bcrypt.BCrypt;
 
 public class UtilisateursFrame extends JFrame {
 
@@ -158,10 +160,13 @@ public class UtilisateursFrame extends JFrame {
         try {
             Connection connexion = Database.getConnection();
 
+            // On hache le mot de passe avant de l'insérer
+            String mdpHache = BCrypt.withDefaults().hashToString(12, txtMdp.getText().toCharArray());
+
             String requete = "INSERT INTO utilisateurs (email, password, role) VALUES (?, ?, ?)";
             PreparedStatement stmt = connexion.prepareStatement(requete);
             stmt.setString(1, txtEmail.getText());
-            stmt.setString(2, txtMdp.getText());
+            stmt.setString(2, mdpHache);
             stmt.setString(3, role);
             stmt.executeUpdate();
 
@@ -202,10 +207,13 @@ public class UtilisateursFrame extends JFrame {
         try {
             Connection connexion = Database.getConnection();
 
+            // On hache le nouveau mot de passe avant de le mettre à jour
+            String mdpHache = BCrypt.withDefaults().hashToString(12, txtMdp.getText().toCharArray());
+
             String requete = "UPDATE utilisateurs SET email = ?, password = ? WHERE id = ?";
             PreparedStatement stmt = connexion.prepareStatement(requete);
             stmt.setString(1, txtEmail.getText());
-            stmt.setString(2, txtMdp.getText());
+            stmt.setString(2, mdpHache);
             stmt.setInt(3, idUtilisateur);
             stmt.executeUpdate();
 

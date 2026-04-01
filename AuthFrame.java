@@ -1,10 +1,12 @@
 package JavaProject;
+
 import javax.swing.*;
 import java.awt.*;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import at.favre.lib.crypto.bcrypt.BCrypt;
 
 public class AuthFrame extends JFrame {
 
@@ -43,19 +45,28 @@ public class AuthFrame extends JFrame {
         try {
             Connection connexion = Database.getConnection();
 
-            String requete = "SELECT * FROM utilisateurs WHERE email = ? AND password = ?";
+            // On récupère le hash stocké en BDD pour cet email
+            String requete = "SELECT * FROM utilisateurs WHERE email = ?";
 
             PreparedStatement stmt = connexion.prepareStatement(requete);
             stmt.setString(1, email);
-            stmt.setString(2, mdp);
 
             ResultSet res = stmt.executeQuery();
 
             if (res.next()) {
-                Session.emailConnecte = email;
-                Session.roleConnecte  = res.getString("role");
-                new MenuFrame().setVisible(true);
-                this.dispose();
+                String hashBdd = res.getString("password");
+
+                // On vérifie le mot de passe saisi contre le hash
+                BCrypt.Result resultat = BCrypt.verifyer().verify(mdp.toCharArray(), hashBdd);
+
+                if (resultat.verified) {
+                    Session.emailConnecte = email;
+                    Session.roleConnecte  = res.getString("role");
+                    new MenuFrame().setVisible(true);
+                    this.dispose();
+                } else {
+                    JOptionPane.showMessageDialog(this, "Identifiants invalides.");
+                }
             } else {
                 JOptionPane.showMessageDialog(this, "Identifiants invalides.");
             }
@@ -74,11 +85,14 @@ public class AuthFrame extends JFrame {
         try {
             Connection connexion = Database.getConnection();
 
+            // On hache le mot de passe avant de l'insérer
+            String mdpHache = BCrypt.withDefaults().hashToString(12, new String(txtMdp.getPassword()).toCharArray());
+
             String requete = "INSERT INTO utilisateurs (email, password, role) VALUES (?, ?, 'client')";
 
             PreparedStatement stmt = connexion.prepareStatement(requete);
             stmt.setString(1, txtEmail.getText());
-            stmt.setString(2, new String(txtMdp.getPassword()));
+            stmt.setString(2, mdpHache);
 
             stmt.executeUpdate();
 
