@@ -57,10 +57,10 @@ public class MesJeuxFrame extends JFrame {
         try {
             Connection connexion = Database.getConnection();
 
-            String requete = "SELECT * FROM transactions WHERE user_email = ?";
+            String requete = "SELECT * FROM transactions WHERE user_identifiant = ?";
 
             PreparedStatement stmt = connexion.prepareStatement(requete);
-            stmt.setString(1, Session.emailConnecte);
+            stmt.setString(1, Session.identifiantConnecte);
 
             ResultSet res = stmt.executeQuery();
 

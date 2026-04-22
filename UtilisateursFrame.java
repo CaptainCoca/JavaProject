@@ -9,7 +9,6 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import at.favre.lib.crypto.bcrypt.BCrypt;
 
 public class UtilisateursFrame extends JFrame {
 
@@ -26,8 +25,8 @@ public class UtilisateursFrame extends JFrame {
         setLocationRelativeTo(null);
         setResizable(false);
 
-        modelClients.setColumnIdentifiers(new String[]{"ID", "Email"});
-        modelAdmins.setColumnIdentifiers(new String[]{"ID", "Email"});
+        modelClients.setColumnIdentifiers(new String[]{"ID", "Identifiant"});
+        modelAdmins.setColumnIdentifiers(new String[]{"ID", "Identifiant"});
 
         chargerUtilisateurs();
 
@@ -117,17 +116,17 @@ public class UtilisateursFrame extends JFrame {
             Connection connexion = Database.getConnection();
 
             Statement stmt = connexion.createStatement();
-            ResultSet res  = stmt.executeQuery("SELECT id, email, role FROM utilisateurs");
+            ResultSet res  = stmt.executeQuery("SELECT id, identifiant, role FROM utilisateurs");
 
             while (res.next()) {
                 int    id    = res.getInt("id");
-                String email = res.getString("email");
+                String identifiant = res.getString("identifiant");
                 String role  = res.getString("role");
 
                 if ("client".equals(role)) {
-                    modelClients.addRow(new Object[]{id, email});
+                    modelClients.addRow(new Object[]{id, identifiant});
                 } else if ("admin".equals(role)) {
-                    modelAdmins.addRow(new Object[]{id, email});
+                    modelAdmins.addRow(new Object[]{id, identifiant});
                 }
             }
 
@@ -142,14 +141,14 @@ public class UtilisateursFrame extends JFrame {
 
     private void ajouterCompte(String role) {
 
-        JTextField txtEmail = new JTextField(20);
+        JTextField txtIdentifiant = new JTextField(20);
         JTextField txtMdp   = new JTextField(20);
 
         String titre = "admin".equals(role) ? "Ajouter un admin" : "Ajouter un client";
 
         JPanel panel = new JPanel(new GridLayout(2, 2));
-        panel.add(new JLabel("Email :"));
-        panel.add(txtEmail);
+        panel.add(new JLabel("Identifiant :"));
+        panel.add(txtIdentifiant);
         panel.add(new JLabel("Mot de passe :"));
         panel.add(txtMdp);
 
@@ -160,13 +159,10 @@ public class UtilisateursFrame extends JFrame {
         try {
             Connection connexion = Database.getConnection();
 
-            // On hache le mot de passe avant de l'insérer
-            String mdpHache = BCrypt.withDefaults().hashToString(12, txtMdp.getText().toCharArray());
-
-            String requete = "INSERT INTO utilisateurs (email, password, role) VALUES (?, ?, ?)";
+            String requete = "INSERT INTO utilisateurs (identifiant, password, role) VALUES (?, ?, ?)";
             PreparedStatement stmt = connexion.prepareStatement(requete);
-            stmt.setString(1, txtEmail.getText());
-            stmt.setString(2, mdpHache);
+            stmt.setString(1, txtIdentifiant.getText());
+            stmt.setString(2, txtMdp.getText());
             stmt.setString(3, role);
             stmt.executeUpdate();
 
@@ -189,14 +185,14 @@ public class UtilisateursFrame extends JFrame {
         if (row == -1) return;
 
         int    idUtilisateur = (int)    model.getValueAt(row, 0);
-        String emailActuel   = (String) model.getValueAt(row, 1);
+        String identifiantActuel   = (String) model.getValueAt(row, 1);
 
-        JTextField txtEmail = new JTextField(emailActuel, 20);
+        JTextField txtIdentifiant = new JTextField(identifiantActuel, 20);
         JTextField txtMdp   = new JTextField(20);
 
         JPanel panel = new JPanel(new GridLayout(2, 2));
-        panel.add(new JLabel("Email :"));
-        panel.add(txtEmail);
+        panel.add(new JLabel("Identifiant :"));
+        panel.add(txtIdentifiant);
         panel.add(new JLabel("Nouveau mot de passe :"));
         panel.add(txtMdp);
 
@@ -207,13 +203,10 @@ public class UtilisateursFrame extends JFrame {
         try {
             Connection connexion = Database.getConnection();
 
-            // On hache le nouveau mot de passe avant de le mettre à jour
-            String mdpHache = BCrypt.withDefaults().hashToString(12, txtMdp.getText().toCharArray());
-
-            String requete = "UPDATE utilisateurs SET email = ?, password = ? WHERE id = ?";
+            String requete = "UPDATE utilisateurs SET identifiant = ?, password = ? WHERE id = ?";
             PreparedStatement stmt = connexion.prepareStatement(requete);
-            stmt.setString(1, txtEmail.getText());
-            stmt.setString(2, mdpHache);
+            stmt.setString(1, txtIdentifiant.getText());
+            stmt.setString(2, txtMdp.getText());
             stmt.setInt(3, idUtilisateur);
             stmt.executeUpdate();
 
@@ -234,9 +227,9 @@ public class UtilisateursFrame extends JFrame {
         if (row == -1) return;
 
         int    idUtilisateur = (int)    model.getValueAt(row, 0);
-        String email         = (String) model.getValueAt(row, 1);
+        String identifiant   = (String) model.getValueAt(row, 1);
 
-        int confirm = JOptionPane.showConfirmDialog(this, "Supprimer " + email + " ?", "Confirmation", JOptionPane.YES_NO_OPTION);
+        int confirm = JOptionPane.showConfirmDialog(this, "Supprimer " + identifiant + " ?", "Confirmation", JOptionPane.YES_NO_OPTION);
 
         if (confirm != JOptionPane.YES_OPTION) return;
 

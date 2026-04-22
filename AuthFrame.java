@@ -10,21 +10,21 @@ import at.favre.lib.crypto.bcrypt.BCrypt;
 
 public class AuthFrame extends JFrame {
 
-    JTextField txtEmail = new JTextField(20);
+    JTextField txtIdentifiant = new JTextField(20);
 
     JPasswordField txtMdp = new JPasswordField(20);
 
     public AuthFrame() {
 
         setTitle("Connexion");
-        setSize(280, 200);
+        setSize(250, 200);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
         setResizable(false);
         setLayout(new FlowLayout());
 
-        add(new JLabel("Email :"));
-        add(txtEmail);
+        add(new JLabel("Identifiant :"));
+        add(txtIdentifiant);
         add(new JLabel("Mot de passe :"));
         add(txtMdp);
 
@@ -39,29 +39,27 @@ public class AuthFrame extends JFrame {
 
     private void connecter() {
 
-        String email = txtEmail.getText();
-        String mdp   = new String(txtMdp.getPassword());
+        String identifiant = txtIdentifiant.getText();
+        String mdp         = new String(txtMdp.getPassword());
 
         try {
             Connection connexion = Database.getConnection();
 
-            // On récupère le hash stocké en BDD pour cet email
-            String requete = "SELECT * FROM utilisateurs WHERE email = ?";
+            String requete = "SELECT * FROM utilisateurs WHERE identifiant = ?";
 
             PreparedStatement stmt = connexion.prepareStatement(requete);
-            stmt.setString(1, email);
+            stmt.setString(1, identifiant);
 
             ResultSet res = stmt.executeQuery();
 
             if (res.next()) {
                 String hashBdd = res.getString("password");
 
-                // On vérifie le mot de passe saisi contre le hash
                 BCrypt.Result resultat = BCrypt.verifyer().verify(mdp.toCharArray(), hashBdd);
 
                 if (resultat.verified) {
-                    Session.emailConnecte = email;
-                    Session.roleConnecte  = res.getString("role");
+                    Session.identifiantConnecte = identifiant;
+                    Session.roleConnecte        = res.getString("role");
                     new MenuFrame().setVisible(true);
                     this.dispose();
                 } else {
@@ -82,16 +80,28 @@ public class AuthFrame extends JFrame {
 
     private void inscrire() {
 
+        String identifiant = txtIdentifiant.getText().trim();
+        String mdp         = new String(txtMdp.getPassword()).trim();
+
+        if (identifiant.isEmpty() || mdp.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Veuillez saisir un identifiant et un mot de passe.");
+            return;
+        }
+
+        if (identifiant.length() < 5) {
+            JOptionPane.showMessageDialog(this, "L'identifiant doit contenir au moins 5 caracteres.");
+            return;
+        }
+
         try {
             Connection connexion = Database.getConnection();
 
-            // On hache le mot de passe avant de l'insérer
-            String mdpHache = BCrypt.withDefaults().hashToString(12, new String(txtMdp.getPassword()).toCharArray());
+            String mdpHache = BCrypt.withDefaults().hashToString(12, mdp.toCharArray());
 
-            String requete = "INSERT INTO utilisateurs (email, password, role) VALUES (?, ?, 'client')";
+            String requete = "INSERT INTO utilisateurs (identifiant, password, role) VALUES (?, ?, 'client')";
 
             PreparedStatement stmt = connexion.prepareStatement(requete);
-            stmt.setString(1, txtEmail.getText());
+            stmt.setString(1, identifiant);
             stmt.setString(2, mdpHache);
 
             stmt.executeUpdate();

@@ -18,7 +18,7 @@ public class MenuFrame extends JFrame {
 
     public MenuFrame() {
 
-        setTitle("Ludotheque - Connecte en tant que : " + Session.emailConnecte);
+        setTitle("Ludotheque - Connecte en tant que : " + Session.identifiantConnecte);
         setSize(900, 500);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
@@ -42,7 +42,7 @@ public class MenuFrame extends JFrame {
 
         // Panneau info compte
         String typeCompte = "admin".equals(Session.roleConnecte) ? "Compte admin" : "Compte client";
-        JLabel lblCompte = new JLabel(Session.emailConnecte + "  |  " + typeCompte);
+        JLabel lblCompte = new JLabel(Session.identifiantConnecte + "  |  " + typeCompte);
         lblCompte.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 
         // Panneau bas gauche : Deconnexion + Recharger
@@ -113,7 +113,7 @@ public class MenuFrame extends JFrame {
 
         btnRecharger.addActionListener(e -> chargerLudotheque());
         btnDeconnexion.addActionListener(e -> {
-            Session.emailConnecte = null;
+            Session.identifiantConnecte = null;
             Session.roleConnecte  = null;
             new AuthFrame().setVisible(true);
             this.dispose();
@@ -178,9 +178,9 @@ public class MenuFrame extends JFrame {
             stmt2.setInt(1, idJeu);
             stmt2.executeUpdate();
 
-            String requete3 = "INSERT INTO transactions (user_email, jeu_nom, type_action) VALUES (?, ?, ?)";
+            String requete3 = "INSERT INTO transactions (user_identifiant, jeu_nom, type_action) VALUES (?, ?, ?)";
             PreparedStatement stmt3 = connexion.prepareStatement(requete3);
-            stmt3.setString(1, Session.emailConnecte);
+            stmt3.setString(1, Session.identifiantConnecte);
             stmt3.setString(2, nomJeu);
             stmt3.setString(3, type);
             stmt3.executeUpdate();
