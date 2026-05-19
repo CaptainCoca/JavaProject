@@ -1,0 +1,29 @@
+CREATE DATABASE IF NOT EXISTS gestion_jeux;
+USE gestion_jeux;
+
+CREATE TABLE utilisateurs (
+    id          INT AUTO_INCREMENT PRIMARY KEY,
+    identifiant VARCHAR(100) NOT NULL UNIQUE,
+    password    VARCHAR(60)  NOT NULL,
+    role        VARCHAR(10)  NOT NULL
+);
+
+CREATE TABLE jeux_video (
+    id          INT AUTO_INCREMENT PRIMARY KEY,
+    nom         VARCHAR(100) NOT NULL,
+    entreprise  VARCHAR(100) NOT NULL,
+    exemplaires INT          NOT NULL DEFAULT 0,
+    etat        VARCHAR(20)  NOT NULL DEFAULT 'disponible'
+);
+
+CREATE TABLE transactions (
+    id               INT AUTO_INCREMENT PRIMARY KEY,
+    user_identifiant VARCHAR(100) NOT NULL,
+    jeu_nom          VARCHAR(100) NOT NULL,
+    type_action      VARCHAR(20)  NOT NULL,
+    date_action      TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+INSERT INTO utilisateurs (identifiant, password, role) VALUES
+('admin',  '$2a$12$yiVEY9sHI.0CbpOgMqa0aeIO5UbyIWjGM4m97grtUuD/KQe1MINO6', 'admin'),
+('client', '$2a$12$3WkiCAoaHda5ZAt422rEvurOHfiytSqFMDYgDvBbryqWXzpkq6u.2', 'client');
