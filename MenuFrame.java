@@ -1,5 +1,3 @@
-package JavaProject;
-
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumn;
@@ -24,14 +22,14 @@ public class MenuFrame extends JFrame {
         setLocationRelativeTo(null);
         setResizable(false);
 
-        model.setColumnIdentifiers(new String[]{"ID", "Nom", "Entreprise", "Stock", "Etat"});
+        model.setColumnIdentifiers(new String[]{"ID", "Nom", "Entreprise", "Plateforme", "Stock", "Etat"});
 
         chargerLudotheque();
 
         // Masquer ID et Stock pour les clients
         if (!"admin".equals(Session.roleConnecte)) {
             TableColumn colId    = tableJeux.getColumnModel().getColumn(0);
-            TableColumn colStock = tableJeux.getColumnModel().getColumn(3);
+            TableColumn colStock = tableJeux.getColumnModel().getColumn(4);
             colId.setMinWidth(0);
             colId.setMaxWidth(0);
             colId.setWidth(0);
@@ -114,7 +112,7 @@ public class MenuFrame extends JFrame {
         btnRecharger.addActionListener(e -> chargerLudotheque());
         btnDeconnexion.addActionListener(e -> {
             Session.identifiantConnecte = null;
-            Session.roleConnecte  = null;
+            Session.roleConnecte        = null;
             new AuthFrame().setVisible(true);
             this.dispose();
         });
@@ -126,7 +124,8 @@ public class MenuFrame extends JFrame {
         try {
             Connection connexion = Database.getConnection();
 
-            String requete = "SELECT * FROM jeux_video";
+            String requete = "SELECT j.id, j.nom, j.entreprise, p.nom AS plateforme, j.exemplaires, j.etat " +
+                             "FROM jeux_video j LEFT JOIN plateformes p ON j.plateforme_id = p.id";
 
             Statement stmt = connexion.createStatement();
             ResultSet res  = stmt.executeQuery(requete);
@@ -136,6 +135,7 @@ public class MenuFrame extends JFrame {
                     res.getInt("id"),
                     res.getString("nom"),
                     res.getString("entreprise"),
+                    res.getString("plateforme"),
                     res.getInt("exemplaires"),
                     res.getString("etat")
                 });
@@ -158,7 +158,7 @@ public class MenuFrame extends JFrame {
 
         int    idJeu  = (int)    model.getValueAt(row, 0);
         String nomJeu = (String) model.getValueAt(row, 1);
-        String etat   = (String) model.getValueAt(row, 4);
+        String etat   = (String) model.getValueAt(row, 5);
 
         if ("indisponible".equals(etat)) {
             JOptionPane.showMessageDialog(this, "Desole, ce jeu n'est pas disponible pour le moment, veuillez reessayer ulterieurement.");
@@ -192,9 +192,27 @@ public class MenuFrame extends JFrame {
 
             chargerLudotheque();
 
+            String message = "emprunter".equals(type) ? "Le jeu a bien ete emprunte !" : "Le jeu a bien ete achete !";
+            JOptionPane.showMessageDialog(this, message);
+
         } catch (SQLException exc) {
             exc.printStackTrace();
         }
+    }
+
+    private String[] chargerPlateformes(Connection connexion) throws SQLException {
+        Statement stmt = connexion.createStatement();
+        ResultSet res  = stmt.executeQuery("SELECT nom FROM plateformes ORDER BY nom");
+
+        java.util.List<String> liste = new java.util.ArrayList<>();
+        while (res.next()) {
+            liste.add(res.getString("nom"));
+        }
+
+        res.close();
+        stmt.close();
+
+        return liste.toArray(new String[0]);
     }
 
     private void ajouterJeu() {
@@ -203,26 +221,36 @@ public class MenuFrame extends JFrame {
         JTextField txtEntreprise  = new JTextField(15);
         JTextField txtExemplaires = new JTextField(15);
 
-        JPanel panel = new JPanel(new GridLayout(3, 2));
-        panel.add(new JLabel("Nom :"));
-        panel.add(txtNom);
-        panel.add(new JLabel("Entreprise :"));
-        panel.add(txtEntreprise);
-        panel.add(new JLabel("Exemplaires :"));
-        panel.add(txtExemplaires);
-
-        int result = JOptionPane.showConfirmDialog(this, panel, "Ajouter un jeu", JOptionPane.OK_CANCEL_OPTION);
-
-        if (result != JOptionPane.OK_OPTION) return;
-
         try {
-            Connection connexion = Database.getConnection();
+            Connection connexion    = Database.getConnection();
+            String[]   plateformes  = chargerPlateformes(connexion);
+            connexion.close();
 
-            String requete = "INSERT INTO jeux_video (nom, entreprise, exemplaires, etat) VALUES (?, ?, ?, 'disponible')";
+            JComboBox<String> cbPlateforme = new JComboBox<>(plateformes);
+
+            JPanel panel = new JPanel(new GridLayout(4, 2));
+            panel.add(new JLabel("Nom :"));
+            panel.add(txtNom);
+            panel.add(new JLabel("Entreprise :"));
+            panel.add(txtEntreprise);
+            panel.add(new JLabel("Exemplaires :"));
+            panel.add(txtExemplaires);
+            panel.add(new JLabel("Plateforme :"));
+            panel.add(cbPlateforme);
+
+            int result = JOptionPane.showConfirmDialog(this, panel, "Ajouter un jeu", JOptionPane.OK_CANCEL_OPTION);
+
+            if (result != JOptionPane.OK_OPTION) return;
+
+            connexion = Database.getConnection();
+
+            String requete = "INSERT INTO jeux_video (nom, entreprise, exemplaires, etat, plateforme_id) " +
+                             "VALUES (?, ?, ?, 'disponible', (SELECT id FROM plateformes WHERE nom = ?))";
             PreparedStatement stmt = connexion.prepareStatement(requete);
             stmt.setString(1, txtNom.getText());
             stmt.setString(2, txtEntreprise.getText());
             stmt.setInt(3, Integer.parseInt(txtExemplaires.getText()));
+            stmt.setString(4, (String) cbPlateforme.getSelectedItem());
             stmt.executeUpdate();
 
             stmt.close();
@@ -241,40 +269,52 @@ public class MenuFrame extends JFrame {
 
         if (row == -1) return;
 
-        int    idJeu              = (int)    model.getValueAt(row, 0);
-        String nomActuel          = (String) model.getValueAt(row, 1);
-        String entrepriseActuelle = (String) model.getValueAt(row, 2);
-        int    exemplairesActuels = (int)    model.getValueAt(row, 3);
+        int    idJeu               = (int)    model.getValueAt(row, 0);
+        String nomActuel           = (String) model.getValueAt(row, 1);
+        String entrepriseActuelle  = (String) model.getValueAt(row, 2);
+        String plateformeActuelle  = (String) model.getValueAt(row, 3);
+        int    exemplairesActuels  = (int)    model.getValueAt(row, 4);
 
         JTextField txtNom         = new JTextField(nomActuel, 15);
         JTextField txtEntreprise  = new JTextField(entrepriseActuelle, 15);
         JTextField txtExemplaires = new JTextField(String.valueOf(exemplairesActuels), 15);
 
-        JPanel panel = new JPanel(new GridLayout(3, 2));
-        panel.add(new JLabel("Nom :"));
-        panel.add(txtNom);
-        panel.add(new JLabel("Entreprise :"));
-        panel.add(txtEntreprise);
-        panel.add(new JLabel("Exemplaires :"));
-        panel.add(txtExemplaires);
-
-        int result = JOptionPane.showConfirmDialog(this, panel, "Modifier le jeu", JOptionPane.OK_CANCEL_OPTION);
-
-        if (result != JOptionPane.OK_OPTION) return;
-
         try {
-            Connection connexion = Database.getConnection();
+            Connection connexion   = Database.getConnection();
+            String[]   plateformes = chargerPlateformes(connexion);
+            connexion.close();
 
-            int nouveauxExemplaires = Integer.parseInt(txtExemplaires.getText());
-            String nouvelEtat = nouveauxExemplaires > 0 ? "disponible" : "indisponible";
+            JComboBox<String> cbPlateforme = new JComboBox<>(plateformes);
+            if (plateformeActuelle != null) cbPlateforme.setSelectedItem(plateformeActuelle);
 
-            String requete = "UPDATE jeux_video SET nom = ?, entreprise = ?, exemplaires = ?, etat = ? WHERE id = ?";
+            JPanel panel = new JPanel(new GridLayout(4, 2));
+            panel.add(new JLabel("Nom :"));
+            panel.add(txtNom);
+            panel.add(new JLabel("Entreprise :"));
+            panel.add(txtEntreprise);
+            panel.add(new JLabel("Exemplaires :"));
+            panel.add(txtExemplaires);
+            panel.add(new JLabel("Plateforme :"));
+            panel.add(cbPlateforme);
+
+            int result = JOptionPane.showConfirmDialog(this, panel, "Modifier le jeu", JOptionPane.OK_CANCEL_OPTION);
+
+            if (result != JOptionPane.OK_OPTION) return;
+
+            connexion = Database.getConnection();
+
+            int    nouveauxExemplaires = Integer.parseInt(txtExemplaires.getText());
+            String nouvelEtat          = nouveauxExemplaires > 0 ? "disponible" : "indisponible";
+
+            String requete = "UPDATE jeux_video SET nom = ?, entreprise = ?, exemplaires = ?, etat = ?, " +
+                             "plateforme_id = (SELECT id FROM plateformes WHERE nom = ?) WHERE id = ?";
             PreparedStatement stmt = connexion.prepareStatement(requete);
             stmt.setString(1, txtNom.getText());
             stmt.setString(2, txtEntreprise.getText());
             stmt.setInt(3, nouveauxExemplaires);
             stmt.setString(4, nouvelEtat);
-            stmt.setInt(5, idJeu);
+            stmt.setString(5, (String) cbPlateforme.getSelectedItem());
+            stmt.setInt(6, idJeu);
             stmt.executeUpdate();
 
             stmt.close();
