@@ -1,0 +1,5 @@
+1. cd /TAB/
+
+2. javac -cp '.;lib/bcrypt-0.10.2.jar;lib/bytes-1.5.0.jar;lib/mysql-connector-java-8.0.27.jar' -d out App.java AuthFrame.java Database.java LoginFrame.java MenuFrame.java MesJeuxFrame.java Session.java UtilisateursFrame.java
+
+3. java -cp '.;lib/bcrypt-0.10.2.jar;lib/bytes-1.5.0.jar;lib/mysql-connector-java-8.0.27.jar;out' App

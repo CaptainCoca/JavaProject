@@ -46,3 +46,20 @@ INSERT INTO jeux_video (nom, entreprise, exemplaires, etat, plateforme_id) VALUE
 ('Red Dead Redemption 2',                   'Rockstar Games', 2, 'disponible', 1),
 ('FIFA 24',                                 'EA Sports',      5, 'disponible', 2),
 ('Minecraft',                               'Mojang Studios', 4, 'disponible', 1);
+
+------------------------------------------------------------------------------------------
+
+USE gestion_jeux;
+
+-- Ajout colonne "moyenne" 
+ALTER TABLE jeux_video 
+ADD COLUMN moyenne DECIMAL(3,2) DEFAULT NULL;
+
+-- Création table "avis"
+CREATE TABLE avis (
+    id               INT AUTO_INCREMENT PRIMARY KEY,
+    jeu_nom          VARCHAR(100) NOT NULL,
+    user_identifiant VARCHAR(100) NOT NULL,
+    note             INT          NOT NULL CHECK (note >= 0 AND note <= 5),
+    date_avis        TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
+);

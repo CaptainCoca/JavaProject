@@ -22,7 +22,7 @@ public class MenuFrame extends JFrame {
         setLocationRelativeTo(null);
         setResizable(false);
 
-        model.setColumnIdentifiers(new String[]{"ID", "Nom", "Entreprise", "Plateforme", "Stock", "Etat"});
+        model.setColumnIdentifiers(new String[]{"ID", "Nom", "Entreprise", "Plateforme", "Stock", "Etat", "Avis"});
 
         chargerLudotheque();
 
@@ -124,20 +124,29 @@ public class MenuFrame extends JFrame {
         try {
             Connection connexion = Database.getConnection();
 
-            String requete = "SELECT j.id, j.nom, j.entreprise, p.nom AS plateforme, j.exemplaires, j.etat " +
+            String requete = "SELECT j.id, j.nom, j.entreprise, p.nom AS plateforme, j.exemplaires, j.etat, j.moyenne " +
                              "FROM jeux_video j LEFT JOIN plateformes p ON j.plateforme_id = p.id";
 
             Statement stmt = connexion.createStatement();
             ResultSet res  = stmt.executeQuery(requete);
 
             while (res.next()) {
+                double moyenne = res.getDouble("Moyenne");
+                String affichageMoyenne;
+                if (res.wasNull()) {
+                    affichageMoyenne = "Pas d'avis";
+                } else {
+                    affichageMoyenne = String.format("%.1f ★", moyenne);
+                }
+
                 model.addRow(new Object[]{
                     res.getInt("id"),
                     res.getString("nom"),
                     res.getString("entreprise"),
                     res.getString("plateforme"),
                     res.getInt("exemplaires"),
-                    res.getString("etat")
+                    res.getString("etat"),
+                    affichageMoyenne
                 });
             }
 
